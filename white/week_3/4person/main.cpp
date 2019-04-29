@@ -9,6 +9,20 @@
 #include <map>
 using namespace std;
 
+
+template <class It, class T>
+It find_less_then(It first, It last, T&& value) {
+    It result = last;
+    while(first != last) {
+        if (first->first > value) {
+            break;
+        }
+        result = first;
+        first++;
+    }
+    return result;
+}
+
 class Person {
 public:
     void ChangeFirstName(int year, const string& first_name) {
@@ -19,23 +33,12 @@ public:
     }
     string GetFullName(int year) {
 
-        auto it = m_first.lower_bound(year);
-        auto it_l = m_last.lower_bound(year);
+        auto it = find_less_then(m_first.begin(), m_first.end(), year);
+        auto it_l = find_less_then(m_last.begin(), m_last.end(), year);
 
-        if(it == m_first.begin() && it->first > year) {
-            it = m_first.end();
-        } else {
-            it--;
-        }
-        if(it_l == m_last.begin() && it_l->first > year) {
-            it_l = m_last.end();
-        } else {
-            it_l--;
-        }
         if (it == m_first.end() && it_l == m_last.end()) {
             return "Incognito";
         }
-//        cout << year << " " << it->first << " " << it_l->first <<"\n";
         if (it != m_first.end() && it_l == m_last.end()) {
             return it->second + " with unknown last name";
         }
