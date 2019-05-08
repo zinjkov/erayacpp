@@ -1,0 +1,13 @@
+add_subdirectory(1LectureTitle)
+add_subdirectory(2RevertFunct)
+add_subdirectory(3RevertFunct2)
+add_subdirectory(1files)
+add_subdirectory(2precision)
+add_subdirectory(3table)
+add_subdirectory(4studetns)
+add_subdirectory(5rational)
+
+add_subdirectory(6EnsureEqual)
+add_subdirectory(7rational2)
+add_subdirectory(8calc)
+add_subdirectory(9asktimeserver)
