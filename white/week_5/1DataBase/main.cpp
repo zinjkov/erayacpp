@@ -43,18 +43,18 @@ bool operator<(const Date& lhs, const Date& rhs) {
 
 ostream &operator<< (ostream &os, Date date) {
     os << setfill('0');
-    os << setw(2) << date.day << "-";
+    os << setw(2) << date.year << "-";
     os << setw(2) << date.month << "-";
-    os << setw(4) << date.year;
+    os << setw(4) << date.day;
     return os;
 }
 
 istream &operator>> (istream &is, Date &date) {
-    is >> date.day;
+    is >> date.year;
     is.ignore(1);
     is >> date.month;
     is.ignore(1);
-    is >> date.year;
+    is >> date.day;
     return is;
 }
 
@@ -68,7 +68,7 @@ public:
             it->second.erase(setit);
             cout << "Deleted successfully";
         } else {
-
+            cout << "Event not found";
         }
     }
 
@@ -77,6 +77,8 @@ public:
         if (it != m_data.end()) {
             m_data.erase(it);
             cout << "Deleted successfully";
+        }else {
+            cout << "Date not found";
         }
     }
 
@@ -120,12 +122,21 @@ pair<string_view, string_view> split_type(string_view cmd) {
 
 pair<Date, string_view> split_date(string_view cmd) {
     auto it = cmd.find(' ');
-    stringstream os(string{cmd.begin(), it});
+    stringstream os(string{cmd.begin(), cmd.end()});
     Date d;
     os >> d;
+    if (it == std::string::npos) {
+        return {d, ""};
+    }
     return {d, cmd.substr(it + 1)};
 }
 
+Date  date_from_string(string_view cmd) {
+    stringstream os(string{cmd.begin(), cmd.end()});
+    Date d;
+    os >> d;
+    return d;
+}
 
 int main() {
     Database db;
@@ -135,13 +146,12 @@ int main() {
         if (!command.empty()) {
             try {
                 auto[type, cmd] = split_type(command);
-                cout << type;
                 if (type == "Add") {
                     auto[date, ev] = split_date(cmd);
                     db.AddEvent(date, {ev.begin(), ev.end()});
                 }
                 if (type == "Del") {
-                    auto[date, ev] = split_date(command);
+                    auto[date, ev] = split_date(cmd);
                     if (ev.empty()) {
                         db.DeleteDate(date);
                     } else {
@@ -152,9 +162,9 @@ int main() {
                     db.Print();
                 }
                 if (type == "Find") {
-                    auto[date, ev] = split_date(command);
+                    auto date = date_from_string(cmd);
+                    cout << date <<"  ";
                     db.Find(date);
-
                 }
                 cout << endl;
             } catch (exception &ex) {
