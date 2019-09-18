@@ -1,129 +1,176 @@
-//
-// Created by Zinkov on 25.04.2019.
-//
-
+#include <string>
 #include <iostream>
-#include <fstream>
-#include <stdexcept>
+#include <cassert>
 #include <vector>
-
+#include <map>
+#include <algorithm>
 using namespace std;
 
-class Matrix {
-public:
-    Matrix() = default;
-    Matrix(size_t numRows, size_t numCols);
-    void Reset(size_t numRows, size_t numCols);
-
-    int At(int row, int col) const;
-    int &At(int row, int col);
-    size_t GetNumRows() const;
-    size_t GetNumColumns() const;
-private:
-    vector<vector<int>> m_data;
+enum class QueryType {
+    NewBus,
+    BusesForStop,
+    StopsForBus,
+    AllBuses
 };
 
-Matrix::Matrix(size_t numRows, size_t numCols) {
+struct Query {
+    QueryType type;
+    string bus;
+    string stop;
+    vector<string> stops;
+};
 
-    if (numCols < 0 || numRows < 0) {
-        throw out_of_range("Matrix args num of rows " + to_string(numRows) + " or cols "
-                             + to_string(numRows) + "less then 0");
-    }
-//    m_data.resize(numRows);
-    m_data.assign(numRows, vector<int>(numCols));
-}
-
-void Matrix::Reset(size_t numRows, size_t numCols) {
-    if (numCols < 0 || numRows < 0) {
-        throw out_of_range("Matrix args num of rows " + to_string(numRows) + " or cols "
-                           + to_string(numRows) + "less then 0");
-    }
-//    m_data.resize(numRows);
-    m_data.assign(numRows, vector<int>(numCols));
-}
-
-int Matrix::At(int row, int col) const {
-    return m_data.at(row).at(col);
-}
-
-int &Matrix::At(int row, int col) {
-    return m_data.at(row).at(col);
-}
-
-size_t Matrix::GetNumRows() const {
-    return m_data.size();
-}
-
-size_t Matrix::GetNumColumns() const {
-    if (m_data.size() > 0) {
-        return m_data[0].size();
-    } else {
-        return 0;
-    }
-}
-
-istream &operator>>(istream &is, Matrix &mat) {
-    int numRows, numCols = 0;
-    cin >> numRows >> numCols;
-    mat.Reset(numRows, numCols);
-
-    for(int i = 0; i < numRows; i++) {
-        for(int j = 0; j < numCols; j++) {
-            cin >> mat.At(i, j);
+istream& operator >> (istream& is, Query& q) {
+    // Реализуйте эту функцию
+    string operation_code;
+    is >> operation_code;
+    if (operation_code == "NEW_BUS") {
+        q.type = QueryType::NewBus;
+        string bus;
+        is >> q.bus;
+        int stop_count;
+        is >> stop_count;
+        q.stops.resize(stop_count);
+        for (int i = 0; i < stop_count; i++) {
+            string stop;
+            is >> stop;
+            q.stops[i] = stop;
         }
+    } else if (operation_code == "BUSES_FOR_STOP") {
+        q.type = QueryType::BusesForStop;
+        is >> q.stop;
+    } else if (operation_code == "STOPS_FOR_BUS") {
+        q.type = QueryType::StopsForBus;
+        cin >> q.bus;
+    } else if (operation_code == "ALL_BUSES") {
+        q.type = QueryType::AllBuses;
     }
     return is;
 }
 
+struct BusesForStopResponse {
+    // Наполните полями эту структуру
+    string stop;
+    vector<string> buses;
+};
 
-
-ostream &operator<<(ostream &os, const Matrix &mat) {
-    cout << mat.GetNumRows() << " " << mat.GetNumColumns() << "\n";
-    for(int i = 0; i < mat.GetNumRows(); i++) {
-        for(int j = 0; j < mat.GetNumColumns(); j++) {
-            if (j > 0) {
-                os << " ";
-            }
-            cout << mat.At(i, j);
+ostream& operator << (ostream& os, const BusesForStopResponse& r) {
+    if (!r.stop.empty()) {
+        os << "Stop " << r.stop << ":";
+        for (auto &&bus : r.buses) {
+            os << " " <<  bus;
         }
-        cout << '\n';
+    } else {
+        os << "No stop";
     }
     return os;
 }
 
-bool operator==(const Matrix &lhs, const Matrix &rhs) {
-    if (lhs.GetNumColumns() == rhs.GetNumColumns() && lhs.GetNumRows() == rhs.GetNumRows()) {
-        for(int i = 0; i < lhs.GetNumRows(); i++) {
-            for(int j = 0; j < lhs.GetNumColumns(); j++) {
-                if (lhs.At(i, j) != rhs.At(i, j)) {
-                    return false;
-                }
+struct StopsForBusResponse {
+    // Наполните полями эту структуру
+    string bus;
+    vector<string> stops;
+};
+
+ostream& operator << (ostream& os, const StopsForBusResponse& r) {
+    if (!r.bus.empty()) {
+        os << "Bus " << r.bus << ":";
+        for(auto &&stop : r.stops) {
+            os << " " << stop;
+        }
+    }else {
+        os << "No bus";
+    }
+    return os;
+}
+
+struct AllBusesResponse {
+    // Наполните полями эту структуру
+    vector<StopsForBusResponse> buses;
+};
+
+ostream& operator << (ostream& os, const AllBusesResponse& r) {
+    if (!r.buses.empty()) {
+        for (auto && bus : r.buses) {
+            os << bus << "\n";
+        }
+    } else {
+        os << "No buses";
+    }
+    return os;
+}
+
+class BusManager {
+public:
+    void AddBus(const string& bus, const vector<string>& stops) {
+        // Реализуйте этот метод
+        m_buses.emplace(bus, stops);
+    }
+
+    BusesForStopResponse GetBusesForStop(const string& stop) const {
+        // Реализуйте этот метод
+        BusesForStopResponse buses;
+        for (auto &&bus : m_buses) {
+            auto it = std::find(bus.second.begin(), bus.second.end(), stop);
+            if (it != bus.second.end()) {
+                buses.stop = stop;
+                buses.buses.push_back(bus.first);
             }
         }
-        return true;
+        return buses;
     }
-    return false;
-}
 
-Matrix operator+(const Matrix &lhs, const Matrix &rhs) {
-    if (lhs.GetNumColumns() != rhs.GetNumColumns() && lhs.GetNumRows() != rhs.GetNumRows()) {
-        throw invalid_argument("matrix op + has different size matrix");
-    }
-    Matrix res(lhs.GetNumRows(), lhs.GetNumColumns());
-    for(int i = 0; i < lhs.GetNumRows(); i++) {
-        for(int j = 0; j < lhs.GetNumColumns(); j++) {
-            res.At(i, j) = lhs.At(i, j) + rhs.At(i, j);
+    StopsForBusResponse GetStopsForBus(const string& bus) const {
+        StopsForBusResponse stops;
+        auto it = m_buses.find(bus);
+        if (it != m_buses.end()) {
+            stops.bus = it->first;
+            stops.stops = it->second;
         }
+        return stops;
     }
-    return res;
-}
 
+    AllBusesResponse GetAllBuses() const {
+        AllBusesResponse allBuses;
+        for(auto &&bus : m_buses) {
+            StopsForBusResponse stops;
+            stops.bus = bus.first;
+            stops.stops = bus.second;
+            allBuses.buses.push_back(stops);
+        }
+        return allBuses;
+    }
+
+private:
+    map<string, vector<string>> m_buses;
+};
+
+// Не меняя тела функции main, реализуйте функции и классы выше
 
 int main() {
-    Matrix one;
-    Matrix two;
+    int query_count;
+    Query q;
 
-    cin >> one >> two;
-    cout << one + two << endl;
+    cin >> query_count;
+
+    BusManager bm;
+    for (int i = 0; i < query_count; ++i) {
+        cin >> q;
+        switch (q.type) {
+            case QueryType::NewBus:
+                bm.AddBus(q.bus, q.stops);
+                break;
+            case QueryType::BusesForStop:
+                cout << bm.GetBusesForStop(q.stop) << endl;
+                break;
+            case QueryType::StopsForBus:
+                cout << bm.GetStopsForBus(q.bus) << endl;
+                break;
+            case QueryType::AllBuses:
+                cout << bm.GetAllBuses() << endl;
+                break;
+        }
+    }
+
     return 0;
 }
