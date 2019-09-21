@@ -86,13 +86,17 @@ ostream& operator << (ostream& os, const StopsForBusResponse& r) {
 
 struct AllBusesResponse {
     // Наполните полями эту структуру
-    vector<StopsForBusResponse> buses;
+    map<string, vector<string>> all_busses;
 };
 
 ostream& operator << (ostream& os, const AllBusesResponse& r) {
-    if (!r.buses.empty()) {
-        for (auto && bus : r.buses) {
-            os << bus << "\n";
+    if (!r.all_busses.empty()) {
+        for (auto && bus : r.all_busses) {
+            os << "Bus " <<  bus.first << ":";
+            for (auto &&stop : bus.second) {
+                os << " " << stop;
+            }
+            os << "\n";
         }
     } else {
         os << "No buses";
@@ -104,45 +108,39 @@ class BusManager {
 public:
     void AddBus(const string& bus, const vector<string>& stops) {
         // Реализуйте этот метод
-        m_buses.emplace(bus, stops);
+        m_bus_to_stop.emplace(bus, stops);
+        for (auto &&stop : stops) {
+            m_stop_to_bus[stop].emplace_back(bus);
+        }
     }
 
     BusesForStopResponse GetBusesForStop(const string& stop) const {
         // Реализуйте этот метод
-        BusesForStopResponse buses;
-        for (auto &&bus : m_buses) {
-            auto it = std::find(bus.second.begin(), bus.second.end(), stop);
-            if (it != bus.second.end()) {
-                buses.stop = stop;
-                buses.buses.push_back(bus.first);
-            }
-        }
+        BusesForStopResponse buses{};
+        try {
+            buses.buses = m_stop_to_bus.at(stop);
+            buses.stop = stop;
+        } catch (...) {}
         return buses;
     }
 
     StopsForBusResponse GetStopsForBus(const string& bus) const {
-        StopsForBusResponse stops;
-        auto it = m_buses.find(bus);
-        if (it != m_buses.end()) {
-            stops.bus = it->first;
-            stops.stops = it->second;
-        }
+        StopsForBusResponse stops = {};
+        try {
+            stops.stops = m_bus_to_stop.at(bus);
+            stops.bus = bus;
+
+        } catch (...) {}
         return stops;
     }
 
     AllBusesResponse GetAllBuses() const {
-        AllBusesResponse allBuses;
-        for(auto &&bus : m_buses) {
-            StopsForBusResponse stops;
-            stops.bus = bus.first;
-            stops.stops = bus.second;
-            allBuses.buses.push_back(stops);
-        }
-        return allBuses;
+        return {m_bus_to_stop};
     }
 
 private:
-    map<string, vector<string>> m_buses;
+    map<string, vector<string>> m_bus_to_stop;
+    map<string, vector<string>> m_stop_to_bus;
 };
 
 // Не меняя тела функции main, реализуйте функции и классы выше

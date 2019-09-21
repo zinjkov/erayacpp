@@ -82,7 +82,7 @@ ostream &operator<<(ostream &os, const Matrix &mat) {
     for(int i = 0; i < mat.GetNumRows(); i++) {
         for(int j = 0; j < mat.GetNumColumns(); j++) {
             if (j > 0) {
-                out << " ";
+                cout << " ";
             }
             cout << mat.At(i, j);
         }

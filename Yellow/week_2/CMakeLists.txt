@@ -1,3 +1,7 @@
 
 add_subdirectory(1Decompose)
-
+add_subdirectory(2GetDistinctRealRootCount)
+add_subdirectory(3Rational)
+add_subdirectory(4IsPalindrom)
+add_subdirectory(5sum_reverse_sort)
+add_subdirectory(6PhoneNumber)
